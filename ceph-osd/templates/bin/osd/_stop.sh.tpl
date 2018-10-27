@@ -21,12 +21,12 @@ set -ex
 if [ "x${STORAGE_TYPE%-*}" == "xblock" ]; then
   OSD_DEVICE=$(readlink -f ${STORAGE_LOCATION})
   OSD_JOURNAL=$(readlink -f ${JOURNAL_LOCATION})
-  if [ "x${STORAGE_TYPE#*-}" == "xlogical" ]; then
+#  if [ "x${STORAGE_TYPE#*-}" == "xlogical" ]; then
     CEPH_OSD_PID="$(cat /run/ceph-osd.pid)"
     while kill -0 ${CEPH_OSD_PID} >/dev/null 2>&1; do
         kill -SIGTERM ${CEPH_OSD_PID}
         sleep 1
     done
     umount "$(findmnt -S "${OSD_DEVICE}1" | tail -n +2 | awk '{ print $1 }')"
-  fi
+#  fi
 fi

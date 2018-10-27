@@ -28,15 +28,15 @@ kind: DaemonSet
 metadata:
   name: gnocchi-statsd
   labels:
-{{ tuple $envAll "gnocchi" "metricd" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+{{ tuple $envAll "gnocchi" "statsd" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
 spec:
   selector:
     matchLabels:
-{{ tuple $envAll "gnocchi" "metricd" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
+{{ tuple $envAll "gnocchi" "statsd" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 6 }}
   template:
     metadata:
       labels:
-{{ tuple $envAll "gnocchi" "metricd" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
+{{ tuple $envAll "gnocchi" "statsd" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 8 }}
       annotations:
         configmap-bin-hash: {{ tuple "configmap-bin.yaml" . | include "helm-toolkit.utils.hash" }}
         configmap-etc-hash: {{ tuple "configmap-etc.yaml" . | include "helm-toolkit.utils.hash" }}

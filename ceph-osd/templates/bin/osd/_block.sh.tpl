@@ -33,6 +33,9 @@ if [ "x$JOURNAL_TYPE" == "xdirectory" ]; then
   export OSD_JOURNAL="/var/lib/ceph/journal"
 else
   export OSD_JOURNAL=$(readlink -f ${JOURNAL_LOCATION})
+  if [ "x${STORAGE_TYPE#*-}" == "xbluestore" ]; then
+    export OSD_BLUESTORE=1
+  fi
 fi
 
 if [[ -z "${OSD_DEVICE}" ]];then
@@ -64,7 +67,7 @@ OSD_ID=$(grep "${MOUNTED_PART}" /proc/mounts | awk '{print $2}' | grep -oh '[0-9
 
 OSD_PATH="${OSD_PATH_BASE}-${OSD_ID}"
 OSD_KEYRING="${OSD_PATH}/keyring"
-# NOTE(supamatt): set the initial crush weight of the OSD to 0 to prevent automatic rebalancing
+# NOTE(supamatt): set the initial crush weight of the OSD to 0 to prevent automatic rebalancing		
 OSD_WEIGHT=0
 # NOTE(supamatt): add or move the OSD's CRUSH location
 crush_location

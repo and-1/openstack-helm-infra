@@ -101,6 +101,7 @@ spec:
         - name: elasticsearch-master
           securityContext:
             privileged: true
+            runAsUser: 0
             capabilities:
               add:
                 - IPC_LOCK

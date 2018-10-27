@@ -35,8 +35,8 @@ limitations under the License.
 {{- $_ := .Values.network.cluster | set .Values.conf.ceph.osd "cluster_network" -}}
 {{- end -}}
 
-{{- if empty .Values.conf.ceph.osd.public_network -}}
-{{- $_ := .Values.network.public | set .Values.conf.ceph.osd "public_network" -}}
+{{- if empty .Values.conf.ceph.global.public_network -}}
+{{- $_ := .Values.network.public | set .Values.conf.ceph.global "public_network" -}}
 {{- end -}}
 
 {{- if empty .Values.conf.rgw_ks.config.rgw_swift_url -}}
