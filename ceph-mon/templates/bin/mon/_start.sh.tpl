@@ -12,16 +12,34 @@ if [[ -z "$CEPH_PUBLIC_NETWORK" ]]; then
   exit 1
 fi
 
+
+if [[ ${K8S_HOST_NETWORK} -eq 0 ]]; then
+    MON_NAME=${POD_NAME}
+#TODO set MON_IP for K8S_HOST_NETWORK=0
+else
+    MON_NAME=${NODE_NAME}
+    for ip in $(ip a | awk /inet\ /'{print $2}');do
+      if [[ "x$(ipcalc $ip -b  | awk /^Network/'{print $2}')" == "x$CEPH_PUBLIC_NETWORK" ]];then
+        echo "export MON_IP=${ip%/*}" >> /tmp/mon.env
+        break
+      fi
+    done
+fi
+source /tmp/mon.env
+# Fill discovery endpoints
+ds=($(kubectl get pods --namespace=${NAMESPACE} ${KUBECTL_PARAM} -o jsonpath='{..nodeName}'))
+ep_discovery=""
+while [ "${#ds[*]}" != "${#ep_discovery[*]}" ];do
+/tmp/manage_ep.sh add {{ tuple "ceph_mon" "discovery" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+sleep 1
+ep_discovery=($(kubectl get ep {{ tuple "ceph_mon" "discovery" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }} --namespace=${NAMESPACE} -o jsonpath='{..ip}'))
+done
+
 if [[ -z "$MON_IP" ]]; then
   echo "ERROR- MON_IP must be defined as the IP address of the monitor"
   exit 1
 fi
 
-if [[ ${K8S_HOST_NETWORK} -eq 0 ]]; then
-    MON_NAME=${POD_NAME}
-else
-    MON_NAME=${NODE_NAME}
-fi
 MON_DATA_DIR="/var/lib/ceph/mon/${CLUSTER}-${MON_NAME}"
 MONMAP="/etc/ceph/monmap-${CLUSTER}"
 
@@ -40,7 +58,7 @@ function get_mon_config {
     if [[ ${K8S_HOST_NETWORK} -eq 0 ]]; then
         MONMAP_ADD=$(kubectl get pods --namespace=${NAMESPACE} ${KUBECTL_PARAM} -o template --template="{{`{{range .items}}`}}{{`{{if .status.podIP}}`}}--add {{`{{.metadata.name}}`}} {{`{{.status.podIP}}`}}:${MON_PORT} {{`{{end}}`}} {{`{{end}}`}}")
     else
-        MONMAP_ADD=$(kubectl get pods --namespace=${NAMESPACE} ${KUBECTL_PARAM} -o template --template="{{`{{range .items}}`}}{{`{{if .status.podIP}}`}}--add {{`{{.spec.nodeName}}`}} {{`{{.status.podIP}}`}}:${MON_PORT} {{`{{end}}`}} {{`{{end}}`}}")
+        MONMAP_ADD=$(kubectl get ep ceph-mon-discovery --namespace=${NAMESPACE} -o template --template="{{`{{range .subsets}}`}}{{`{{range .addresses}}`}}{{`{{if .ip}}`}}--add \$(getent hosts {{`{{.ip}}`}}|awk '{print \$2}') {{`{{.ip}}`}}:${MON_PORT} {{`{{end}}`}} {{`{{end}}`}}{{`{{end}}`}}")
     fi
     (( timeout-- ))
     sleep 1
@@ -60,7 +78,7 @@ function get_mon_config {
   fi
 
   # Create a monmap with the Pod Names and IP
-  monmaptool --create ${MONMAP_ADD} --fsid ${fsid} ${MONMAP} --clobber
+  monmaptool --create $(eval echo ${MONMAP_ADD}) --fsid ${fsid} ${MONMAP} --clobber
 }
 
 get_mon_config

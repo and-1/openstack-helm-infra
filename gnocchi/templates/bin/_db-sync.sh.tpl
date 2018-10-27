@@ -18,4 +18,6 @@ limitations under the License.
 
 set -ex
 
-exec gnocchi-upgrade --create-legacy-resource-types
+#exec gnocchi-upgrade --create-legacy-resource-types
+# For new version delete parameters
+exec gnocchi-upgrade

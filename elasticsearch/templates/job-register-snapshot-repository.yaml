@@ -57,7 +57,7 @@ spec:
                   name: {{ $esUserSecret }}
                   key: ELASTICSEARCH_PASSWORD
             - name: ELASTICSEARCH_HOST
-              value: {{ tuple "elasticsearch" "internal" "http" . | include "helm-toolkit.endpoints.host_and_port_endpoint_uri_lookup" }}
+              value: {{ tuple "elasticsearch" "internal" "client" . | include "helm-toolkit.endpoints.host_and_port_endpoint_uri_lookup" }}
             - name: S3_BUCKET
               value: {{ .Values.conf.elasticsearch.snapshots.bucket | quote }}
             - name: S3_ACCESS_KEY

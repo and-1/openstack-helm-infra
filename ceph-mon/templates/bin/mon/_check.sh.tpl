@@ -39,25 +39,33 @@ function heath_check () {
    MON_STATE=$(ceph -f json-pretty --connect-timeout 1 --admin-daemon "${SOCKDIR}/${SBASE}.${MON_NAME}.${SSUFFIX}" mon_status|grep state|sed 's/.*://;s/[^a-z]//g')
    echo "MON ${MON_ID} ${MON_STATE}";
    # this might be a stricter check than we actually want.  what are the
-   # other values for the "state" field?
+   # other values for the "state" field?  for S in ${MON_LIVE_STATE}; do
    for S in ${MON_LIVE_STATE}; do
     if [ "x${MON_STATE}x" = "x${S}x" ]; then
-     exit 0
+     return 0
     fi
    done
   fi
   # if we made it this far, things are not running
-  exit 1
+  return 1
 }
 
 function liveness () {
   MON_LIVE_STATE="probing electing synchronizing leader peon"
-  heath_check
+  if ! heath_check; then
+    exit 1
+  fi
+  exit 0
 }
 
 function readiness () {
   MON_LIVE_STATE="leader peon"
-  heath_check
+  if ! heath_check;then
+    /tmp/manage_ep.sh del {{ tuple "ceph_mon" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+    exit 1
+  else 
+    /tmp/manage_ep.sh add {{ tuple "ceph_mon" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }} && exit 0
+  fi
 }
 
 $COMMAND

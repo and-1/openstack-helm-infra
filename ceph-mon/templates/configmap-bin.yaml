@@ -48,6 +48,8 @@ data:
 {{ tuple "bin/mon/_stop.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
   mon-check.sh: |
 {{ tuple "bin/mon/_check.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
+  manage_ep.sh: |
+{{ tuple "bin/utils/_manage_ep.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}
 
   moncheck-start.sh: |
 {{ tuple "bin/moncheck/_start.sh.tpl" . | include "helm-toolkit.utils.template" | indent 4 }}

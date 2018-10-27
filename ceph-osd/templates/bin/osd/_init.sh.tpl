@@ -26,6 +26,9 @@ if [ "x${STORAGE_TYPE%-*}" == "xdirectory" ]; then
   export OSD_DEVICE="/var/lib/ceph/osd"
 else
   export OSD_DEVICE=$(readlink -f ${STORAGE_LOCATION})
+  if [ "x${STORAGE_TYPE#*-}" == "xbluestore" ]; then
+    export OSD_BLUESTORE=1
+  fi
 fi
 
 if [ "x$JOURNAL_TYPE" == "xdirectory" ]; then
@@ -105,6 +108,17 @@ function osd_disk_prepare {
     fi
   fi
 
+  if [ -b ${OSD_JOURNAL} ]; then
+    exec {ceph_lock}<>/dev/zero
+    flock -e "$ceph_lock"
+    if ! parted --script ${OSD_JOURNAL} print > /dev/null 2>&1; then
+      if [[ ${OSD_FORCE_ZAP} -eq 1 ]]; then
+        ceph-disk -v zap ${OSD_JOURNAL}
+      fi
+    fi
+    flock -u "$ceph_lock"
+  fi
+
   # then search for some ceph metadata on the disk
   if [[ "$(parted --script ${OSD_DEVICE} print | egrep '^ 1.*ceph data')" ]]; then
     if [[ ${OSD_FORCE_ZAP} -eq 1 ]]; then
@@ -160,54 +174,56 @@ function osd_disk_prepare {
     fi
   fi
 
-  if [ "${OSD_BLUESTORE:-0}" -ne 1 ]; then
-    # we only care about journals for filestore.
-    if [ -n "${OSD_JOURNAL}" ]; then
-      if [ -b $OSD_JOURNAL ]; then
-        OSD_JOURNAL=`readlink -f ${OSD_JOURNAL}`
-        OSD_JOURNAL_PARTITION=`echo $OSD_JOURNAL_PARTITION | sed 's/[^0-9]//g'`
-        if [ -z "${OSD_JOURNAL_PARTITION}" ]; then
-          # maybe they specified the journal as a /dev path like '/dev/sdc12':
-          local JDEV=`echo ${OSD_JOURNAL} | sed 's/\(.*[^0-9]\)[0-9]*$/\1/'`
-          if [ -d /sys/block/`basename $JDEV`/`basename $OSD_JOURNAL` ]; then
-            OSD_JOURNAL=$(dev_part ${JDEV} `echo ${OSD_JOURNAL} |\
-              sed 's/.*[^0-9]\([0-9]*\)$/\1/'`)
-            OSD_JOURNAL_PARTITION=${JDEV}
-          fi
-        else
-          OSD_JOURNAL=$(dev_part ${OSD_JOURNAL} ${OSD_JOURNAL_PARTITION})
+  if [ -n "${OSD_JOURNAL}" ]; then
+    if [ -b $OSD_JOURNAL ]; then
+      OSD_JOURNAL=`readlink -f ${OSD_JOURNAL}`
+      OSD_JOURNAL_PARTITION=`echo $OSD_JOURNAL_PARTITION | sed 's/[^0-9]//g'`
+      if [ -z "${OSD_JOURNAL_PARTITION}" ]; then
+        # maybe they specified the journal as a /dev path like '/dev/sdc12':
+        local JDEV=`echo ${OSD_JOURNAL} | sed 's/\(.*[^0-9]\)[0-9]*$/\1/'`
+        if [ -d /sys/block/`basename $JDEV`/`basename $OSD_JOURNAL` ]; then
+          OSD_JOURNAL=$(dev_part ${JDEV} `echo ${OSD_JOURNAL} |\
+            sed 's/.*[^0-9]\([0-9]*\)$/\1/'`)
+          OSD_JOURNAL_PARTITION=${JDEV}
         fi
+      else
+        OSD_JOURNAL=$(dev_part ${OSD_JOURNAL} ${OSD_JOURNAL_PARTITION})
       fi
-      chown ceph. ${OSD_JOURNAL}
-    else
-      echo "No journal device specified.  OSD and journal will share ${OSD_DEVICE}"
-      echo "For better performance, consider moving your journal to a separate device"
     fi
-    CLI_OPTS="${CLI_OPTS} --filestore"
+    chown ceph. ${OSD_JOURNAL}
   else
-    OSD_JOURNAL=''
-    CLI_OPTS="${CLI_OPTS} --bluestore"
+    echo "No journal device specified.  OSD and journal will share ${OSD_DEVICE}"
+    echo "For better performance, consider moving your journal to a separate device"
   fi
 
-  if [ -b "${OSD_JOURNAL}" -a "${OSD_FORCE_ZAP:-0}" -eq 1 ]; then
-    # if we got here and zap is set, it's ok to wipe the journal.
-    echo "OSD_FORCE_ZAP is set, so we will erase the journal device ${OSD_JOURNAL}"
-    if [ -z "${OSD_JOURNAL_PARTITION}" ]; then
-      # it's a raw block device.  nuke any existing partition table.
-      parted -s ${OSD_JOURNAL} mklabel msdos
-    else
-      # we are likely working on a partition. Just make a filesystem on
-      # the device, as other partitions may be in use so nuking the whole
-      # disk isn't safe.
-      mkfs -t xfs -f ${OSD_JOURNAL}
+  if [ "${OSD_BLUESTORE:-0}" -ne 1 ]; then
+
+    CLI_OPTS="${CLI_OPTS} --filestore"
+
+    if [ -b "${OSD_JOURNAL}" -a "${OSD_FORCE_ZAP:-0}" -eq 1 ]; then
+      # if we got here and zap is set, it's ok to wipe the journal.
+      echo "OSD_FORCE_ZAP is set, so we will erase the journal device ${OSD_JOURNAL}"
+      if [ -z "${OSD_JOURNAL_PARTITION}" ]; then
+        # it's a raw block device.  nuke any existing partition table.
+        parted -s ${OSD_JOURNAL} mklabel msdos
+      else
+        # we are likely working on a partition. Just make a filesystem on
+        # the device, as other partitions may be in use so nuking the whole
+        # disk isn't safe.
+        mkfs -t xfs -f ${OSD_JOURNAL}
+      fi
     fi
+
+  else
+    CLI_OPTS="${CLI_OPTS} --bluestore"
+    OSD_JOURNAL="--block.wal $OSD_JOURNAL --block.db $OSD_JOURNAL"
   fi
 
   if [ "x$JOURNAL_TYPE" == "xdirectory" ]; then
-    export OSD_JOURNAL="--journal-file"
+    OSD_JOURNAL = "--journal-file"
   fi
 
-  ceph-disk -v prepare ${CLI_OPTS} --journal-uuid ${OSD_JOURNAL_UUID} ${OSD_DEVICE} ${OSD_JOURNAL}
+  flock -e /dev/zero ceph-disk -v prepare ${CLI_OPTS} --journal-uuid ${OSD_JOURNAL_UUID} ${OSD_DEVICE} ${OSD_JOURNAL}
 
   # watch the udev event queue, and exit if all current events are handled
   udevadm settle --timeout=600

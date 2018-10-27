@@ -106,9 +106,10 @@ limitations under the License.
               {{- $list_aggregate := list $label_dict }}
               {{- $_ := set $context.Values.__current_label "matchExpressions" $list_aggregate }}
 
-              {{/* Do not schedule to other specified labels, with higher
+              {{/* if exclusive set, do not schedule to other specified labels, with higher
               precedence as the list position increases. Last defined label
               is highest priority. */}}
+              {{- if $label_data.exclusive }}
               {{- $other_labels := without $context.Values.__label_list $label_data }}
               {{- range $label_data2 := $other_labels }}
                 {{- $label_dict := omit $label_data2.label "NULL" }}
@@ -119,6 +120,7 @@ limitations under the License.
                 {{- $_ := set $context.Values.__current_label "matchExpressions" $list_aggregate }}
               {{- end }}
               {{- $_ := set $context.Values "__label_list" $other_labels }}
+              {{- end }}
 
               {{/* Do not schedule to any other specified hosts */}}
               {{- range $type, $type_data := $val }}

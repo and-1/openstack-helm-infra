@@ -100,6 +100,7 @@ spec:
 {{ tuple $envAll $envAll.Values.pod.resources.data | include "helm-toolkit.snippets.kubernetes_resources" | indent 10 }}
           securityContext:
             privileged: true
+            runAsUser: 0
             capabilities:
               add:
                 - IPC_LOCK

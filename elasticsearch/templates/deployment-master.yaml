@@ -101,6 +101,7 @@ spec:
         - name: elasticsearch-master
           securityContext:
             privileged: true
+            runAsUser: 0
             capabilities:
               add:
                 - IPC_LOCK
@@ -138,7 +139,7 @@ spec:
             - name: NODE_DATA
               value: "false"
             - name: HTTP_ENABLE
-              value: "false"
+              value: "true"
             - name: DISCOVERY_SERVICE
               value: {{ tuple "elasticsearch" "discovery" $envAll | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
             - name: ES_JAVA_OPTS

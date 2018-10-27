@@ -16,6 +16,7 @@ develop-eggs
 .installed.cfg
 lib
 lib64
+helm-toolkit-0.1.0.tgz
 
 # Installer logs
 pip-log.txt

@@ -35,6 +35,9 @@ if [ "x$JOURNAL_TYPE" == "xdirectory" ]; then
   export OSD_JOURNAL="/var/lib/ceph/journal"
 else
   export OSD_JOURNAL=$(readlink -f ${JOURNAL_LOCATION})
+  if [ "x${STORAGE_TYPE#*-}" == "xbluestore" ]; then
+    export OSD_BLUESTORE=1
+  fi
 fi
 
 if [[ ! -e /etc/ceph/${CLUSTER}.conf ]]; then
@@ -112,6 +115,7 @@ function wait_for_file {
 }
 
 DATA_PART=$(dev_part ${OSD_DEVICE} 1)
+BLOCK_PART=$(dev_part ${OSD_DEVICE} 2)
 MOUNTED_PART=${DATA_PART}
 
 ceph-disk -v \
@@ -124,8 +128,13 @@ OSD_ID=$(grep "${MOUNTED_PART}" /proc/mounts | awk '{print $2}' | grep -oh '[0-9
 
 OSD_PATH="${OSD_PATH_BASE}-${OSD_ID}"
 OSD_KEYRING="${OSD_PATH}/keyring"
-# NOTE(supamatt): set the initial crush weight of the OSD to 0 to prevent automatic rebalancing
-OSD_WEIGHT=0
+
+if [ "${OSD_BLUESTORE:-0}" -ne 1 ]; then
+  OSD_WEIGHT=$(df -P -k "${OSD_PATH}" | tail -1 | awk '{ d= $2/1073741824 ; r = sprintf("%.2f", d); print r }')
+else
+  OSD_WEIGHT=$(lsblk -b -n ${BLOCK_PART} | awk '{ d= $4/1099511627776 ; r = sprintf("%.3f", d); print r }')
+fi
+
 ceph \
   --cluster "${CLUSTER}" \
   --name="osd.${OSD_ID}" \

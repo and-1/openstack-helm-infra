@@ -27,4 +27,6 @@ spec:
     port: {{ tuple "elasticsearch" "internal" "discovery" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
   selector:
 {{ tuple $envAll "elasticsearch" "master" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+  publishNotReadyAddresses: true
+  ClusterIP: None
 {{- end }}

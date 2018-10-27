@@ -34,7 +34,13 @@ spec:
   - port: {{ tuple "ceph_mon" "discovery" "mon" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
     protocol: TCP
     targetPort: {{ tuple "ceph_mon" "discovery" "mon" $envAll | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
-  selector:
-{{ tuple $envAll "ceph" "mon" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+# Comment selector. We handle enpoints by hand
+#  selector:
+#{{ tuple $envAll "ceph" "mon" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
   clusterIP: None
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ tuple "ceph_mon" "discovery" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
 {{- end }}
