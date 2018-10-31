@@ -74,3 +74,4 @@ releasenotes/build
 logs/
 tools/gate/local-overrides/
 playbooks/*.retry
+*/charts
