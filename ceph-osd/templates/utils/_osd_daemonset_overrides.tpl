@@ -285,10 +285,16 @@ limitations under the License.
 ---
 {{- $_ := set $context.Values "__tmpYAML" dict }}
 
+
 {{ $dsNodeName := index $context.Values.__daemonset_yaml.metadata "name" }}
 {{ $localDsNodeName := print (trunc 54 $current_dict.dns_1123_name) "-" (print $dsNodeName $k | quote | sha256sum | trunc 8)}}
 {{- if not $context.Values.__tmpYAML.metadata }}{{- $_ := set $context.Values.__tmpYAML "metadata" dict }}{{- end }}
 {{- $_ := set $context.Values.__tmpYAML.metadata "name" $localDsNodeName }}
+
+{{- $group := dict "name" "" }}
+{{- if $context.Values.group_by_class }}
+{{- $_ := set $group "name" (index (split "-" $dsNodeName) "_4") }}
+{{- end }}
 
 {{ $podDataVols := index $context.Values.__daemonset_yaml.spec.template.spec "volumes" }}
 {{- $_ := set $context.Values "__tmpPodVols" $podDataVols }}
@@ -330,7 +336,7 @@ limitations under the License.
     {{- if empty $context.Values._tmpYAMLcontainer.env }}
     {{- $_ := set $context.Values._tmpYAMLcontainer "env" ( list ) }}
     {{- end }}
-    {{ $containerEnv := prepend (prepend (prepend ( prepend (index $context.Values._tmpYAMLcontainer "env") (dict "name" "STORAGE_TYPE" "value" $v.data.type)) (dict "name" "JOURNAL_TYPE" "value" $v.journal.type)) (dict "name" "STORAGE_LOCATION" "value" $v.data.location)) (dict "name" "JOURNAL_LOCATION" "value" $v.journal.location) }}
+    {{ $containerEnv := prepend (prepend (prepend (prepend ( prepend (index $context.Values._tmpYAMLcontainer "env") (dict "name" "STORAGE_TYPE" "value" $v.data.type)) (dict "name" "JOURNAL_TYPE" "value" $v.journal.type)) (dict "name" "STORAGE_LOCATION" "value" $v.data.location)) (dict "name" "JOURNAL_LOCATION" "value" $v.journal.location)) (dict "name" "GROUP" "value" $group.name)}}
     {{- $localInitContainerEnv := omit $context.Values._tmpYAMLcontainer "env" }}
     {{- $_ := set $localInitContainerEnv "env" $containerEnv }}
     {{ $containerList := append $context.Values.__tmpYAMLcontainers $localInitContainerEnv }}

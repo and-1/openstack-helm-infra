@@ -143,6 +143,16 @@ ceph \
   crush \
   create-or-move -- "${OSD_ID}" "${OSD_WEIGHT}" ${CRUSH_LOCATION}
 
+# Set class the same as environment
+OSD_CREDs="--cluster "${CLUSTER} --name="osd.${OSD_ID} --keyring="${OSD_KEYRING}"
+if [ ! -z ${GROUP} ]; then
+  if [ ! $(ceph ${OSD_CREDs} osd crush class ls-osd ${GROUP} | grep -q "^${OSD_ID}$") ];then
+    ceph ${OSD_CREDs} osd crush rm-device-class ${OSD_ID}
+    ceph ${OSD_CREDs} osd crush set-device-class ${GROUP} ${OSD_ID}
+  fi
+fi
+# End set of class
+
 if [ "${OSD_BLUESTORE:-0}" -ne 1 ]; then
   if [ -n "${OSD_JOURNAL}" ]; then
     if [ -b "${OSD_JOURNAL}" ]; then
