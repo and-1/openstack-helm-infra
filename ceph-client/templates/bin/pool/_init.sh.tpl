@@ -118,7 +118,7 @@ reweight_osds
 {{ $targetProtection := .Values.conf.pool.target.protected | default "false" | quote | lower }}
 {{- range $pool := .Values.conf.pool.spec -}}
 {{- with $pool }}
-manage_pool {{ .application }} {{ .name }} {{ .replication }} {{ $targetNumOSD }} {{ .percent_total_data }} {{ $targetPGperOSD }} {{ $crushRuleDefault }} {{ $targetProtection }}
+manage_pool {{ .application }} {{ .name }} {{ .replication }} {{ $targetNumOSD }} {{ .percent_total_data }} {{ $targetPGperOSD }} {{ .crush_rule  | default $crushRuleDefault }} {{ $targetProtection }}
 {{- end }}
 {{- end }}
 
