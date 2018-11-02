@@ -37,6 +37,14 @@ if ! ceph --cluster "${CLUSTER}" osd crush rule ls | grep -q "^same_host$"; then
   ceph --cluster "${CLUSTER}" osd crush rule create-simple same_host default osd
 fi
 
+{{- if .Values.group_by_class }}
+if ! ceph --cluster "${CLUSTER}" osd crush rule ls | grep -q "^dev_rule$"; then
+  ceph --cluster "${CLUSTER}" osd crush rule create-replicated dev_rule default host dev
+
+if ! ceph --cluster "${CLUSTER}" osd crush rule ls | grep -q "^prod_rule$"; then
+  ceph --cluster "${CLUSTER}" osd crush rule create-replicated prod_rule default host prod
+{{ end }}
+
 function reweight_osds () {
   for OSD_ID in $(ceph --cluster "${CLUSTER}" osd df | awk '$3 == "0" {print $1}'); do
     OSD_WEIGHT=$(ceph --cluster "${CLUSTER}" osd df --format json-pretty| grep -A7 "\bosd.${OSD_ID}\b" | awk '/"kb"/{ gsub(",",""); d= $2/1073741824 ; r = sprintf("%.2f", d); print r }');
