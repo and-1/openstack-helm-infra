@@ -292,7 +292,7 @@ limitations under the License.
 {{- $_ := set $context.Values.__tmpYAML.metadata "name" $localDsNodeName }}
 
 {{- $group := dict "name" "" }}
-{{- if $context.Values.group_by_class }}
+{{- if $context.Values.group_by_class.enabled }}
 {{- $_ := set $group "name" (index (split "-" $dsNodeName) "_4") }}
 {{- end }}
 
