@@ -32,7 +32,9 @@ function start () {
       --default-backend-service=${POD_NAMESPACE}/${ERROR_PAGE_SERVICE} \
       --configmap=${POD_NAMESPACE}/ingress-conf \
       --tcp-services-configmap=${POD_NAMESPACE}/ingress-services-tcp \
-      --udp-services-configmap=${POD_NAMESPACE}/ingress-services-udp
+      --udp-services-configmap=${POD_NAMESPACE}/ingress-services-udp \
+      --default-server-port=${PORT_HTTP}
+# workaround when issue don't resolve. https://bugs.launchpad.net/openstack-helm/+bug/1785940
 }
 
 function stop () {
