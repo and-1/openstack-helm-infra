@@ -103,7 +103,7 @@ spec:
           command:
             - chown
             - -R
-            - "nobody:"
+            - "prometheus:"
             - /var/lib/prometheus/data
           volumeMounts:
             - name: storage
