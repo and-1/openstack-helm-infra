@@ -18,18 +18,19 @@ limitations under the License.
 {{- $envAll := index . 0 -}}
 {{- $deps := index . 1 -}}
 {{- $saName := index . 2 | replace "_" "-" }}
-{{- $saNamespace := index . 3 -}}
+{{- $tgNamespace := index . 3 -}}
+{{- $saNamespace := index . 4 -}}
 {{- $releaseName := $envAll.Release.Name }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: {{ $releaseName }}-{{ $saName }}
-  namespace: {{ $saNamespace }}
+  namespace: {{ $tgNamespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ $releaseName }}-{{ $saNamespace }}-{{ $saName }}
+  name: {{ $releaseName }}-{{ $tgNamespace }}-{{ $saName }}
 subjects:
   - kind: ServiceAccount
     name: {{ $saName }}
@@ -38,8 +39,8 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: Role
 metadata:
-  name: {{ $releaseName }}-{{ $saNamespace }}-{{ $saName }}
-  namespace: {{ $saNamespace }}
+  name: {{ $releaseName }}-{{ $tgNamespace }}-{{ $saName }}
+  namespace: {{ $tgNamespace }}
 rules:
   - apiGroups:
       - ""
