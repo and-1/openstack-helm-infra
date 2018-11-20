@@ -139,7 +139,7 @@ spec:
             - name: NODE_DATA
               value: "false"
             - name: HTTP_ENABLE
-              value: "true"
+              value: "false"
             - name: DISCOVERY_SERVICE
               value: {{ tuple "elasticsearch" "discovery" $envAll | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
             - name: ES_JAVA_OPTS
