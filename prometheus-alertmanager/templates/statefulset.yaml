@@ -62,7 +62,7 @@ spec:
           command:
             - chown
             - -R
-            - "nobody:"
+            - "prometheus:"
             - /var/lib/alertmanager/data
           volumeMounts:
             - name: alertmanager-data
