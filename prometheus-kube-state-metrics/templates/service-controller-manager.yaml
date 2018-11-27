@@ -30,7 +30,14 @@ metadata:
 {{- end }}
 spec:
   selector:
+{{/* Intergration with kubespray */}}
+{{- if .Values.controller_labels }}
+{{- range $k,$v := .Values.controller_labels }}
+    {{ $k }}: {{ $v }}
+{{- end }}
+{{- else }}
     component: kube-controller-manager
+{{- end }}
   type: ClusterIP
   clusterIP: None
   ports:

@@ -30,7 +30,14 @@ metadata:
 {{- end }}
 spec:
   selector:
+{{/* Intergration with kubespray */}}
+{{- if .Values.scheduler_labels }}
+{{- range $k,$v := .Values.scheduler_labels }}
+    {{ $k }}: {{ $v }}
+{{- end }}
+{{- else }}
     component: kube-scheduler
+{{- end }}
   type: ClusterIP
   clusterIP: None
   ports:
