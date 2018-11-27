@@ -1,0 +1,26 @@
+{{/* This service needs for interation calico in kubespray and osh-infra*/}}
+{{- if .Values.manifests.monitoring.prometheus.service_exporter }}
+{{- if .Values.monitoring.prometheus.enabled }}
+{{- $envAll := . }}
+{{- $prometheus_annotations := $envAll.Values.monitoring.prometheus.calico_exporter }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ tuple "calico_exporter" "internal" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
+  labels:
+{{ tuple $envAll "calico_exporter" "metrics" | include "helm-toolkit.snippets.kubernetes_metadata_labels" | indent 4 }}
+  annotations:
+{{- if .Values.monitoring.prometheus.enabled }}
+{{ tuple $prometheus_annotations | include "helm-toolkit.snippets.prometheus_service_annotations" | indent 4 }}
+{{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: {{ .Values.endpoints.calico_exporter.port.metrics.default }}
+  selector:
+    k8s-app: 'calico-node'
+{{- end }}
+{{- end }}
