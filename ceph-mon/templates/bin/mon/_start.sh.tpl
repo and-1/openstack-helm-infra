@@ -28,7 +28,7 @@ fi
 source /tmp/mon.env
 # Fill discovery endpoints
 ds=($(kubectl get pods --namespace=${NAMESPACE} ${KUBECTL_PARAM} -o jsonpath='{..nodeName}'))
-ep_discovery=""
+ep_discovery=()
 while [ "${#ds[*]}" != "${#ep_discovery[*]}" ];do
 /tmp/manage_ep.sh add {{ tuple "ceph_mon" "discovery" . | include "helm-toolkit.endpoints.hostname_short_endpoint_lookup" }}
 sleep 1
