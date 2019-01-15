@@ -337,7 +337,7 @@ spec:
           - name: KEEPALIVED_UNICAST_PEERS
             value: null
           - name: KEEPALIVED_ROUTER_ID
-            value: {{ .Values.network.vip.routerid | default('51') | quote }}
+            value: {{ .Values.network.vip.routerid | default "51" | quote }}
 {{- end }}
 {{- end }}
       volumes:
