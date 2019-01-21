@@ -55,7 +55,7 @@ if [ ! -e "${RGW_KEYRING}" ]; then
 fi
 
 if [[ $(ceph -v | egrep -c "luminous" | xargs echo) -gt 0 ]]; then
-  RGW_FRONTENDS="civitweb port=${RGW_FRONTEND_PORT}"
+  RGW_FRONTENDS="civetweb port=${RGW_FRONTEND_PORT}"
 else
   RGW_FRONTENDS="beast port=${RGW_FRONTEND_PORT}"
 fi
