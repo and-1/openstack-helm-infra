@@ -145,7 +145,12 @@ function dev_part {
 function osd_pg_interval_fix {
   # NOTE(supamatt): https://tracker.ceph.com/issues/21142 is impacting us due to the older Ceph version 12.2.3 that we are running
   if [ "x${OSD_PG_INTERVAL_FIX}" == "xtrue" ]; then
-    for PG in $(ls ${OSD_PATH}/current | awk -F'_' '/head/{print $1}'); do
+    if [ "${OSD_BLUESTORE:-0}" -ne 1 ]; then
+      PGs=$(ls ${OSD_PATH}/current | awk -F'_' '/head/{print $1}')
+    elif [ "${OSD_BLUESTORE:-0}" -eq 1 ]; then
+      PGs=$(ceph-objectstore-tool --data-path ${OSD_PATH} --op list-pgs)
+    fi
+    for PG in $PGs; do
       ceph-objectstore-tool --data-path ${OSD_PATH} --op rm-past-intervals --pgid ${PG};
     done
   fi
